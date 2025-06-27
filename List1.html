@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maharashtra College Directory</title>
+<style>
+    /* General & Fit-to-Screen Styles */
+    :root {
+        --primary-color: #0056b3;
+        --secondary-color: #6c757d;
+        --background-color: #f4f7f6;
+        --text-color: #222125;
+        --card-bg-color: #ffffff;
+        --admin-bg-color: #e9ecef;
+        --danger-color: #dc3545;
+        --success-color: #228a74;
+        --shadow-color: rgba(0,0,0,0.1);
+        --border-radius: 8px;
+
+        /* NEW: Responsive menu width variables */
+        --menu-width-mobile: 70vw; /* 70% of viewport width for mobile */
+        --menu-width-desktop: 280px; /* Fixed width for desktop */
+    }
+
+    html { height: 100%; }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        margin: 0;
+        line-height: 1.6;
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+        overflow-x: hidden; /* Prevents horizontal scrollbar */
+    }
+
+    .hidden { display: none !important; }
+
+    /* Layout Containers */
+    #user-view, #login-view, #admin-panel-view {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        position: relative; /* Crucial for positioning children like menu toggle */
+    }
+    #admin-panel-view, #user-view {
+        justify-content: flex-start;
+        padding-top: 2rem;
+    }
+    .container {
+        width: 100%;
+        max-width: 1100px;
+        padding: 2rem;
+        background-color: var(--card-bg-color);
+        border-radius: var(--border-radius);
+        box-shadow: 0 4px 15px var(--shadow-color);
+        box-sizing: border-box;
+    }
+    @media (max-width: 767px) { .container { padding: 1.5rem; } }
+
+    /* Component Styles */
+    header { text-align: center; margin-bottom: 2.5rem; }
+    header h1 { font-size: 2.5rem; color: var(--primary-color); margin: 0; }
+    header p { font-size: 1.1rem; color: var(--secondary-color); margin-top: 0.5rem; }
+    @media (max-width: 767px) {
+        header h1 { font-size: 1.8rem; }
+        header p { font-size: 1rem; }
+    }
+
+    .form-group { display: flex; flex-direction: column; }
+    label { font-weight: 600; margin-bottom: 0.5rem; }
+    select, input[type="text"], input[type="password"], input[type="number"] {
+        padding: 0.8rem;
+        border: 1px solid #ccc;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* User Filter Area */
+    .filter-area {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background-color: #2f8f9f;
+        border-radius: var(--border-radius);
+    }
+    .cutoff-filter .range-label { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+    #cutoff-value { font-weight: bold; color: var(--primary-color); }
+    input[type="range"] { width: 100%; margin-top: 0.5rem; }
+
+    .college-card {
+        border: 1px solid #e0e0e0;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        background: #fff;
+        box-shadow: 0 2px 5px var(--shadow-color);
+    }
+    .college-card h3 { color: var(--primary-color); margin: 0 0 0.5rem 0; }
+    .college-card .details { display: flex; justify-content: space-between; color: var(--secondary-color); font-size: 0.9rem; }
+
+    .admin-link { text-align: center; margin-top: 2rem; }
+    button {
+        cursor: pointer;
+        padding: 0.8rem 1.5rem;
+        border: none;
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        font-weight: 600;
+        transition: background-color 0.3s;
+    }
+    .btn-primary { background-color: var(--primary-color); color: white; }
+    .btn-danger { background-color: var(--danger-color); color: white; }
+    .btn-success { background-color: var(--success-color); color: white; }
+    .btn-secondary { background-color: var(--secondary-color); color: white; }
+
+    /* Admin Panel & Login Specific Styles */
+    #admin-panel-view .container, #login-view .container {
+        background-color: var(--admin-bg-color);
+    }
+    #login-view .container { max-width: 450px; margin-top: -5rem; }
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #ccc;
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+    .admin-header h2 { color: var(--primary-color); }
+    .admin-section {
+        background: #fff;
+        padding: 2rem;
+        border-radius: var(--border-radius);
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px var(--shadow-color);
+    }
+    .admin-section h3 { border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 0; }
+    .add-college-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    @media (min-width: 768px) { .add-college-grid { grid-template-columns: 1fr 1fr; } }
+    .table-responsive-wrapper { overflow-x: auto; width: 100%; }
+    .manage-colleges-table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
+    .manage-colleges-table th, .manage-colleges-table td {
+        text-align: left;
+        padding: 0.8rem;
+        border-bottom: 1px solid #ddd;
+        white-space: nowrap;
+    }
+    .manage-colleges-table th { background-color: #f2f2f2; }
+
+    /* SLIDE MENU STYLES */
+    .slide-menu {
+        position: fixed;
+        top: 0;
+        left: var(--menu-closed-position); /* Use variable for initial hidden state */
+        width: var(--current-menu-width); /* Use variable for menu width */
+        height: 100%;
+        background-color: var(--primary-color);
+        color: white;
+        padding-top: 80px; /* Space for fixed header/toggle button */
+        box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+        transition: left 0.3s ease-in-out;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .slide-menu.active {
+        left: 0;
+    }
+
+    .slide-menu ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        flex-grow: 1; /* Allows menu items to take up available space */
+    }
+
+    .slide-menu li {
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .slide-menu li:last-child {
+        border-bottom: none;
+    }
+
+    .slide-menu a {
+        display: block;
+        padding: 15px 20px;
+        color: white;
+        text-decoration: none;
+        font-size: 1.1rem;
+        transition: background-color 0.2s ease;
+    }
+
+    .slide-menu a:hover {
+        background-color: rgba(0,0,0,0.2);
+    }
+
+    .menu-toggle {
+        position: fixed;
+        top: 1.5rem; /* Adjust based on desired top margin */
+        left: 1.5rem; /* Adjust based on desired left margin */
+        background: none;
+        border: none;
+        color: var(--primary-color); /* Original color */
+        font-size: 2rem;
+        cursor: pointer;
+        z-index: 1001; /* Above menu overlay */
+        transition: color 0.3s ease;
+    }
+
+    /* Adjust menu toggle color when menu is active for visibility */
+    .slide-menu.active + #menu-toggle-btn { /* Note: This selector means menu-toggle-btn must immediately follow slide-menu in HTML for this to work */
+        color: white; /* Make toggle white when menu is open */
+        z-index: 1002; /* Ensure it stays above the menu itself if needed */
+    }
+
+    #admin-panel-content {
+        flex-grow: 1;
+        transition: transform 0.3s ease-in-out;
+        min-width: 0; /* Allows content to shrink if needed, preventing overflow */
+    }
+
+    .menu-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 999;
+        display: none;
+        transition: opacity 0.3s ease;
+        opacity: 0;
+    }
+
+    .menu-overlay.active {
+        display: block;
+        opacity: 1;
+    }
+
+    /* Style for active menu item */
+    .slide-menu a.active-menu-item {
+        background-color: rgba(0,0,0,0.3);
+        font-weight: bold;
+    }
+
+    /* Logout button inside menu for consistency */
+    .slide-menu .logout-button {
+        background-color: var(--danger-color);
+        color: white;
+        border-radius: var(--border-radius);
+        padding: 10px 15px;
+        margin: 20px;
+        width: calc(100% - 40px);
+        text-align: center;
+        text-decoration: none;
+        font-weight: 600;
+        transition: background-color 0.3s;
+    }
+
+    .slide-menu .logout-button:hover {
+        background-color: #c82333;
+    }
+
+    /* MEDIA QUERIES FOR RESPONSIVE MENU */
+    /* Desktop styles first (default) */
+    :root {
+        --current-menu-width: var(--menu-width-desktop);
+        --menu-closed-position: -280px; /* Needs to match desktop width */
+    }
+
+    /* Mobile styles (max-width 767px) */
+    @media (max-width: 767px) {
+        :root {
+            --current-menu-width: var(--menu-width-mobile);
+            --menu-closed-position: -70vw; /* Needs to match mobile width (70vw) */
+        }
+        .menu-toggle {
+            top: 1rem; /* Slightly adjust for smaller screens if needed */
+            left: 1rem;
+            font-size: 1.8rem; /* Smaller icon for mobile */
+        }
+    }
+</style>
+</head>
+<body>
+
+    <div id="user-view" >
+        <div class="container">
+            <header>
+                <h1>Maharashtra College Directory</h1>
+                <p>Find engineering colleges using advanced filters.</p>
+            </header>
+            <div class="filter-area">
+                <div class="form-group">
+                    <label for="district-filter">District</label>
+                    <select id="district-filter"><option value="">All Districts</option></select>
+                </div>
+                <div class="form-group">
+                    <label for="taluka-filter">Taluka</label>
+                    <select id="taluka-filter" disabled><option value="">All Talukas</option></select>
+                </div>
+                <div class="form-group">
+                    <label for="university-filter">University</label>
+                    <select id="university-filter"><option value="">All Universities</option></select>
+                </div>
+                <div class="form-group cutoff-filter">
+                    <div class="range-label">
+                        <label for="cutoff-filter">Max Cutoff</label>
+                        <span id="cutoff-value">100</span>
+                    </div>
+                    <input type="range" id="cutoff-filter" min="0" max="100" value="100">
+                </div>
+            </div>
+            <h2 id="results-heading" style="text-align:center; font-weight: 500; color: #333;"></h2>
+            <div id="college-list"></div>
+            <div class="admin-link">
+                <button id="show-login-btn" class="btn-primary">Admin Login</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="login-view" class="hidden">
+        <div class="container">
+            <header><h1>Admin Login</h1></header>
+            <form id="login-form">
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <p id="login-error" style="color:var(--danger-color); text-align:center; min-height: 1.2em;"></p>
+                <button type="submit" class="btn-primary" style="width: 100%;">Login</button>
+            </form>
+            <div class="admin-link">
+                <button id="back-to-user-view-btn" class="btn-secondary">Back to Public View</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-panel-view" class="hidden">
+        <button class="menu-toggle" id="menu-toggle-btn">&#9776;</button> <nav class="slide-menu" id="slide-menu">
+            <ul>
+                <li><a href="#" data-section="add-college-section">Add New College</a></li>
+                <li><a href="#" data-section="manage-colleges-section">Manage Colleges</a></li>
+                <li><a href="#" data-section="change-password-section">Change Admin Password</a></li>
+            </ul>
+            <button id="logout-btn-menu" class="logout-button">Logout</button>
+        </nav>
+
+        <div class="menu-overlay" id="menu-overlay"></div>
+
+        <div class="container" id="admin-panel-content">
+            <div class="admin-header">
+                <h2>Admin Panel</h2>
+                </div>
+
+            <div class="admin-section" id="add-college-section">
+                <h3>Add New College</h3>
+                <form id="add-college-form">
+                    <div class="add-college-grid">
+                        <div class="form-group">
+                            <label for="admin-district-select">District</label>
+                            <select id="admin-district-select" required><option value="">-- Select District --</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-taluka-select">Taluka</label>
+                            <select id="admin-taluka-select" required disabled><option value="">-- Select Taluka --</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-university-select">Affiliated University</label>
+                            <select id="admin-university-select" required><option value="">-- Select University</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="college-cutoff">Cutoff Score (0-100)</label>
+                            <input type="number" id="college-cutoff" min="0" max="100" step="0.1" required>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top:1.5rem;">
+                        <label for="college-name">College Name</label>
+                        <input type="text" id="college-name" required>
+                    </div>
+                    <div class="form-group" style="margin-top:1.5rem;">
+                        <label for="college-location">College Location (e.g., Address)</label>
+                        <input type="text" id="college-location" required>
+                    </div>
+                    <button type="submit" class="btn-success" style="margin-top:1.5rem;">Add College</button>
+                </form>
+            </div>
+
+            <div class="admin-section" id="manage-colleges-section">
+                <h3>Manage Colleges</h3>
+                <div class="table-responsive-wrapper">
+                    <table class="manage-colleges-table">
+                        <thead>
+                            <tr>
+                                <th>College Name</th>
+                                <th>University</th>
+                                <th>Cutoff</th>
+                                <th>Taluka</th>
+                                <th>District</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manage-colleges-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-section" id="change-password-section">
+                <h3>Change Admin Password</h3>
+                <form id="change-password-form">
+                    <div class="form-group">
+                        <label for="new-password">New Password</label>
+                        <input type="password" id="new-password" required>
+                    </div>
+                    <p id="password-success" style="color:var(--success-color); min-height: 1.2em;"></p>
+                    <button type="submit" class="btn-primary" style="margin-top:1rem;">Change Password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // DATA
+        const universitiesInMaharashtra = [
+            "Savitribai Phule Pune University",
+            "University of Mumbai",
+            "Rashtrasant Tukadoji Maharaj Nagpur University",
+            "Dr. Babasaheb Ambedkar Marathwada University",
+            "Dr. Babasaheb Ambedkar Technological University",
+            "Shivaji University",
+            "Sant Gadge Baba Amravati University",
+            "Punyashlok Ahilyadevi Holkar Solapur University",
+            "Kavayitri Bahinabai Chaudhari North Maharashtra University",
+            "Swami Ramanand Teerth Marathwada University",
+            "Gondwana University",
+            "MIT World Peace University",
+            "Symbiosis International University",
+            "Bharati Vidyapeeth",
+            "COEP Technological University",
+            "VJTI, Mumbai (Autonomous)",
+            "Walchand College of Engineering, Sangli (Autonomous)",
+            "Institute of Chemical Technology (ICT), Mumbai"
+        ];
+        const districtsAndTalukas = {
+            "Ahmednagar": ["Ahmednagar", "Akole", "Jamkhed", "Karjat", "Kopargaon", "Nevasa", "Parner", "Pathardi", "Rahata", "Rahuri", "Sangamner", "Shevgaon", "Shrigonda", "Shrirampur"],
+            "Akola": ["Akola", "Akot", "Balapur", "Barshitakli", "Murtajapur", "Patur", "Telhara"],
+            "Amravati": ["Achalpur", "Amravati", "Anjangaon Surji", "Bhatkuli", "Chandur Bazar", "Chandur Railway", "Chikhaldara", "Daryapur", "Dhamangaon Railway", "Dharni", "Morshi", "Nandgaon Khandeshwar", "Teosa", "Warud"],
+            "Aurangabad": ["Aurangabad", "Phulambri", "Sillod", "Soegaon", "Kannad", "Khuldabad", "Vaijapur", "Gangapur", "Paithan"],
+            "Beed": ["Ashti", "Beed", "Dharur", "Georai", "Kaij", "Majalgaon", "Parli", "Patoda", "Shirur Kasar", "Wadwani", "Ambejogai"],
+            "Bhandara": ["Bhandara", "Lakhani", "Lakhandur", "Mohadi", "Pauni", "Sakoli", "Tumsar"],
+            "Buldhana": ["Buldhana", "Chikhli", "Deulgaon Raja", "Jalgaon Jamod", "Khamgaon", "Lonar", "Malkapur", "Mehkar", "Motala", "Nandura", "Sangrampur", "Shegaon", "Sindkhed Raja"],
+            "Chandrapur": ["Ballarpur", "Bhadravati", "Brahmapuri", "Chandrapur", "Chimur", "Gondpimpri", "Jiwati", "Korpana", "Mul", "Nagbhid", "Pombhurna", "Rajura", "Sawali", "Sindewahi", "Warora"],
+            "Dhule": ["Dhule", "Sakri", "Shirpur", "Sindkheda"],
+            "Gadchiroli": ["Aheri", "Armori", "Bhamragad", "Chamorshi", "Desaiganj (Vadasa)", "Dhanora", "Etapalli", "Gadchiroli", "Korchi", "Kurkheda", "Mulchera", "Sironcha"],
+            "Gondia": ["Amgaon", "Arjuni Morgaon", "Deori", "Gondia", "Goregaon", "Sadak Arjuni", "Salekasa", "Tirora"],
+            "Hingoli": ["Aundha Nagnath", "Basmath", "Hingoli", "Kalamnuri", "Sengaon"],
+            "Jalgaon": ["Amalner", "Bhadgaon", "Bhusawal", "Bodwad", "Chalisgaon", "Chopda", "Dharangaon", "Erandol", "Jalgaon", "Jamner", "Muktainagar", "Pachora", "Parola", "Raver", "Yawal"],
+            "Jalna": ["Ambad", "Badnapur", "Bhokardan", "Ghansawangi", "Jafferabad", "Jalna", "Mantha", "Partur"],
+            "Kolhapur": ["Ajra", "Bavda", "Bhudargad", "Chandgad", "Gadhinglaj", "Hatkanangle", "Kagal", "Karvir", "Panhala", "Radhanagari", "Shahuwadi", "Shirol"],
+            "Latur": ["Ahmedpur", "Ausa", "Chakur", "Deoni", "Jalkot", "Latur", "Nilanga", "Renapur", "Shirur Anantpal", "Udgir"],
+            "Mumbai City": ["Mumbai"],
+            "Mumbai Suburban": ["Andheri", "Borivali", "Kurla"],
+            "Nagpur": ["Bhiwapur", "Hingna", "Kalameshwar", "Kamptee", "Katol", "Kuhi", "Mauda", "Nagpur (Rural)", "Nagpur (Urban)", "Narkhed", "Parseoni", "Ramtek", "Savner", "Umred"],
+            "Nanded": ["Ardhapur", "Bhokar", "Biloli", "Deglur", "Dharmabad", "Hadgaon", "Himayatnagar", "Kandhar", "Kinwat", "Loha", "Mahur", "Mudkhed", "Mukhed", "Naigaon", "Nanded", "Umri"],
+            "Nandurbar": ["Akkalkuwa", "Akrani", "Nandurbar", "Navapur", "Shahada", "Taloda"],
+            "Nashik": ["Baglan", "Chandwad", "Deola", "Dindori", "Igatpuri", "Kalwan", "Malegaon", "Nandgaon", "Nashik", "Niphad", "Peint", "Sinnar", "Surgana", "Trimbakeshwar", "Yeola"],
+            "Osmanabad": ["Bhum", "Kalamb", "Lohara", "Omerga", "Osmanabad", "Paranda", "Tuljapur", "Washi"],
+            "Palghar": ["Dahanu", "Jawhar", "Mokhada", "Palghar", "Talasari", "Vada", "Vasai", "Vikramgad"],
+            "Parbhani": ["Gangakhed", "Jintur", "Manwath", "Palam", "Parbhani", "Pathri", "Purna", "Selu", "Sonpeth"],
+            "Pune": ["Ambegaon", "Baramati", "Bhor", "Daund", "Haveli", "Indapur", "Junnar", "Khed", "Maval", "Mulshi", "Pune City", "Purandar", "Shirur", "Velhe"],
+            "Raigad": ["Alibag", "Karjat", "Khalapur", "Mahad", "Mangaon", "Mhasla", "Murud", "Panvel", "Pen", "Poladpur", "Roha", "Shrivardhan", "Sudhagad", "Tala", "Uran"],
+            "Ratnagiri": ["Chiplun", "Dapoli", "Guhagar", "Khed", "Lanja", "Mandangad", "Rajapur", "Ratnagiri", "Sangameshwar"],
+            "Sangli": ["Atpadi", "Jat", "Kadegaon", "Kavathe-Mahankal", "Khanapur", "Miraj", "Palus", "Shirala", "Tasgaon", "Walwa"],
+            "Satara": ["Jawali", "Karad", "Khandala", "Khatav", "Koregaon", "Mahabaleshwar", "Man", "Patan", "Phaltan", "Satara", "Wai"],
+            "Sindhudurg": ["Devgad", "Dodamarg", "Kankavli", "Kudal", "Malwan", "Sawantwadi", "Vaibhavwadi", "Vengurla"],
+            "Solapur": ["Akkalkot", "Barshi", "Karmala", "Madha", "Malshiras", "Mangalvedhe", "Mohol", "Pandharpur", "Sangola", "Solapur North", "Solapur South"],
+            "Thane": ["Ambernath", "Bhiwandi", "Kalyan", "Murbad", "Shahapur", "Thane", "Ulhasnagar"],
+            "Wardha": ["Arvi", "Ashti", "Deoli", "Hinganghat", "Karanja", "Samudrapur", "Seloo", "Wardha"],
+            "Washim": ["Karanja", "Malegaon", "Mangrulpir", "Manora", "Risod", "Washim"],
+            "Yavatmal": ["Arni", "Babulgaon", "Darwha", "Digras", "Ghatanji", "Kalamb", "Mahagaon", "Maregaon", "Ner", "Pusad", "Ralegaon", "Umarkhed", "Wani", "Yavatmal", "Zari Jamani"]
+        };
+
+        // DOM ELEMENTS & APP STATE
+        const dom = {
+            userView: document.getElementById('user-view'),
+            loginView: document.getElementById('login-view'),
+            adminView: document.getElementById('admin-panel-view'),
+
+            districtFilter: document.getElementById('district-filter'),
+            talukaFilter: document.getElementById('taluka-filter'),
+            universityFilter: document.getElementById('university-filter'),
+            cutoffFilter: document.getElementById('cutoff-filter'),
+            cutoffValue: document.getElementById('cutoff-value'),
+            collegeList: document.getElementById('college-list'),
+            resultsHeading: document.getElementById('results-heading'),
+
+            adminDistrictSelect: document.getElementById('admin-district-select'),
+            adminTalukaSelect: document.getElementById('admin-taluka-select'),
+            adminUniversitySelect: document.getElementById('admin-university-select'),
+
+            // New menu elements
+            menuToggleBtn: document.getElementById('menu-toggle-btn'),
+            slideMenu: document.getElementById('slide-menu'),
+            menuOverlay: document.getElementById('menu-overlay'),
+            adminPanelContent: document.getElementById('admin-panel-content'),
+            logoutBtnMenu: document.getElementById('logout-btn-menu') // Logout button in menu
+        };
+
+        let appState = {
+            colleges: [],
+            adminCredentials: { username: 'admin', password: 'admin123' },
+            currentAdminSection: 'add-college-section' // To track which admin section is active
+        };
+
+        // INITIALIZATION
+        function initialize() {
+            loadDataFromStorage();
+            populateDistricts(dom.districtFilter);
+            populateDistricts(dom.adminDistrictSelect);
+            populateUniversities(dom.universityFilter);
+            populateUniversities(dom.adminUniversitySelect);
+            setupEventListeners();
+            renderFilteredColleges();
+            // Initially show the 'Add New College' section in admin panel
+            showAdminSection(appState.currentAdminSection);
+        }
+
+        function loadDataFromStorage() {
+            appState.colleges = JSON.parse(localStorage.getItem('colleges') || '[]');
+            appState.adminCredentials = JSON.parse(localStorage.getItem('adminCredentials') || JSON.stringify({ username: 'admin', password: 'admin123' }));
+            localStorage.setItem('adminCredentials', JSON.stringify(appState.adminCredentials)); // Ensure it's set
+        }
+
+        function saveDataToStorage() {
+            localStorage.setItem('colleges', JSON.stringify(appState.colleges));
+            localStorage.setItem('adminCredentials', JSON.stringify(appState.adminCredentials));
+        }
+
+        // VIEW MANAGEMENT
+        function showView(viewId) {
+            [dom.userView, dom.loginView, dom.adminView].forEach(view =>
+                view.classList.add('hidden')
+            );
+            document.getElementById(viewId).classList.remove('hidden');
+
+            // Close menu and remove overlay when switching views
+            if (dom.slideMenu.classList.contains('active')) {
+                toggleMenu();
+            }
+
+            if (viewId === 'admin-panel-view') {
+                renderManageCollegesTable();
+                showAdminSection(appState.currentAdminSection); // Ensure correct section is shown
+            }
+        }
+
+        // SLIDE MENU FUNCTIONS
+        function toggleMenu() {
+            dom.slideMenu.classList.toggle('active');
+            dom.menuOverlay.classList.toggle('active');
+
+            const root = document.documentElement;
+            // Get the current menu width from CSS variables
+            const menuWidth = getComputedStyle(root).getPropertyValue('--current-menu-width').trim();
+
+            if (dom.slideMenu.classList.contains('active')) {
+                dom.adminPanelContent.style.transform = `translateX(${menuWidth})`; // Shift content by current menu width
+                dom.adminPanelContent.style.transition = 'transform 0.3s ease-in-out';
+            } else {
+                dom.adminPanelContent.style.transform = 'translateX(0)';
+            }
+        }
+
+        function showAdminSection(sectionId) {
+            // Hide all admin sections
+            document.querySelectorAll('#admin-panel-content .admin-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            // Show the requested section
+            const targetSection = document.getElementById(sectionId);
+            if (targetSection) {
+                targetSection.style.display = 'block';
+            }
+            appState.currentAdminSection = sectionId; // Update state
+
+            // Highlight active menu item
+            document.querySelectorAll('#slide-menu ul li a').forEach(item => {
+                item.classList.remove('active-menu-item');
+                if (item.dataset.section === sectionId) {
+                    item.classList.add('active-menu-item');
+                }
+            });
+
+            // Close the menu after selecting a section
+            if (dom.slideMenu.classList.contains('active')) {
+                toggleMenu();
+            }
+        }
+
+        // EVENT LISTENERS
+        function setupEventListeners() {
+            document.getElementById('show-login-btn').addEventListener('click', () => showView('login-view'));
+            document.getElementById('back-to-user-view-btn').addEventListener('click', () => showView('user-view'));
+            dom.logoutBtnMenu.addEventListener('click', logout);
+
+            // User filters
+            dom.districtFilter.addEventListener('change', () => {
+                populateTalukas(dom.districtFilter, dom.talukaFilter);
+                renderFilteredColleges();
+            });
+            dom.talukaFilter.addEventListener('change', renderFilteredColleges);
+            dom.universityFilter.addEventListener('change', renderFilteredColleges);
+            dom.cutoffFilter.addEventListener('input', () => {
+                dom.cutoffValue.textContent = dom.cutoffFilter.value;
+            });
+            dom.cutoffFilter.addEventListener('change', renderFilteredColleges);
+
+            // Admin dropdowns
+            dom.adminDistrictSelect.addEventListener('change', () =>
+                populateTalukas(dom.adminDistrictSelect, dom.adminTalukaSelect)
+            );
+
+            // Forms
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            document.getElementById('add-college-form').addEventListener('submit', handleAddCollege);
+            document.getElementById('change-password-form').addEventListener('submit', handleChangePassword);
+
+            // Menu toggle button
+            dom.menuToggleBtn.addEventListener('click', toggleMenu);
+            dom.menuOverlay.addEventListener('click', toggleMenu); // Close menu when overlay is clicked
+
+            // Menu item clicks
+            document.querySelectorAll('#slide-menu ul li a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const sectionId = e.target.dataset.section;
+                    if (sectionId) {
+                        showAdminSection(sectionId);
+                    }
+                });
+            });
+        }
+
+        // HELPER & POPULATION FUNCTIONS
+        function populateDistricts(selectEl) {
+            Object.keys(districtsAndTalukas).sort().forEach(d => selectEl.add(new Option(d, d)));
+        }
+
+        function populateUniversities(selectEl) {
+            universitiesInMaharashtra.sort().forEach(u => selectEl.add(new Option(u, u)));
+        }
+
+        function populateTalukas(districtEl, talukaEl) {
+            const selectedDistrict = districtEl.value;
+            const isUserFilter = talukaEl.id === 'taluka-filter';
+            talukaEl.innerHTML = `<option value="">${isUserFilter ? 'All Talukas' : '-- Select Taluka --'}</option>`;
+            talukaEl.disabled = true;
+            if (selectedDistrict && districtsAndTalukas[selectedDistrict]) {
+                districtsAndTalukas[selectedDistrict].sort().forEach(t => talukaEl.add(new Option(t, t)));
+                talukaEl.disabled = false;
+            }
+        }
+
+        // CORE USER VIEW LOGIC
+        function renderFilteredColleges() {
+            const district = dom.districtFilter.value;
+            const taluka = dom.talukaFilter.value;
+            const university = dom.universityFilter.value;
+            const cutoff = parseInt(dom.cutoffFilter.value, 10);
+            let filtered = appState.colleges;
+
+            if (district) filtered = filtered.filter(c => c.district === district);
+            if (taluka) filtered = filtered.filter(c => c.taluka === taluka);
+            if (university) filtered = filtered.filter(c => c.university === university);
+            if (cutoff < 100) filtered = filtered.filter(c => c.cutoff <= cutoff);
+
+            dom.collegeList.innerHTML = '';
+            dom.resultsHeading.textContent = `Showing ${filtered.length} college(s)`;
+
+            if (filtered.length === 0) {
+                dom.collegeList.innerHTML = '<p style="text-align:center;">No colleges match your criteria.</p>';
+                return;
+            }
+
+            filtered.forEach(college => {
+                const card = document.createElement('div');
+                card.className = 'college-card';
+                card.innerHTML = `
+                    <h3>${college.name}</h3>
+                    <p>${college.location}</p>
+                    <div class="details">
+                        <span>Affiliated to: <strong>${college.university}</strong></span>
+                        <span>Cutoff: <strong>${college.cutoff}</strong></span>
+                    </div>`;
+                dom.collegeList.appendChild(card);
+            });
+        }
+
+        // ADMIN FUNCTIONS
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const l = document.getElementById('login-error');
+
+            if (u === appState.adminCredentials.username && p === appState.adminCredentials.password) {
+                showView('admin-panel-view');
+                l.textContent = '';
+                e.target.reset();
+                showAdminSection(appState.currentAdminSection); // Default to last viewed section or Add New College
+            } else {
+                l.textContent = 'Invalid credentials.';
+            }
+        }
+
+        function logout() {
+            showView('user-view');
+        }
+
+        function handleAddCollege(e) {
+            e.preventDefault();
+            appState.colleges.push({
+                id: Date.now(),
+                district: dom.adminDistrictSelect.value,
+                taluka: dom.adminTalukaSelect.value,
+                university: dom.adminUniversitySelect.value,
+                name: document.getElementById('college-name').value.trim(),
+                location: document.getElementById('college-location').value.trim(),
+                cutoff: parseFloat(document.getElementById('college-cutoff').value)
+            });
+            saveDataToStorage();
+            renderManageCollegesTable();
+            alert('College added successfully!');
+            e.target.reset();
+            populateTalukas(dom.adminDistrictSelect, dom.adminTalukaSelect);
+        }
+
+        function renderManageCollegesTable() {
+            const tbody = document.getElementById('manage-colleges-tbody');
+            tbody.innerHTML = '';
+            if (appState.colleges.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No colleges in the database.</td></tr>';
+                return;
+            }
+            appState.colleges.forEach(c => {
+                const row = tbody.insertRow();
+                row.innerHTML = `<td>${c.name}</td><td>${c.university}</td><td>${c.cutoff}</td><td>${c.taluka}</td><td>${c.district}</td><td><button class="btn-danger" data-id="${c.id}">Delete</button></td>`;
+            });
+            tbody.querySelectorAll('.btn-danger[data-id]').forEach(b =>
+                b.addEventListener('click', handleDeleteCollege)
+            );
+        }
+
+        function handleDeleteCollege(e) {
+            if (confirm('Are you sure you want to delete this college?')) {
+                appState.colleges = appState.colleges.filter(c => c.id !== parseInt(e.target.dataset.id));
+                saveDataToStorage();
+                renderManageCollegesTable();
+            }
+        }
+
+        function handleChangePassword(e) {
+            e.preventDefault();
+            const n = document.getElementById('new-password').value;
+            const p = document.getElementById('password-success');
+            if (n.length < 6) {
+                alert('Password too short. Must be at least 6 characters.');
+                return;
+            }
+            appState.adminCredentials.password = n;
+            saveDataToStorage();
+            p.textContent = 'Password changed!';
+            e.target.reset();
+            setTimeout(() => p.textContent = '', 3000);
+        }
+
+        initialize();
+    });
+</script>
+</body>
+</html>
